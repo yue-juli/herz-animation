@@ -9,131 +9,178 @@
             padding: 0;
             background: #000;
             overflow: hidden;
-            touch-action: manipulation;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            touch-action: none;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #header {
-            color: #FFC0CB;
-            text-align: center;
-            font-size: 28px;
-            padding: 20px 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 100;
+        #container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            transform-origin: center center;
         }
         #canvas {
-            position: fixed;
-            top: 80px;
+            position: absolute;
+            top: 0;
             left: 0;
-            width: 100%;
-            height: calc(100% - 80px);
         }
         #btn {
-            position: fixed;
+            position: absolute;
             bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 30px;
             background: #FFC0CB;
             color: black;
             border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-size: 18px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
             font-weight: bold;
             z-index: 100;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="header">GRETA, ALLES GUTE ZUM 17! 💗</div>
-    <canvas id="canvas"></canvas>
-    <button id="btn">Weiter →</button>
+    <div id="container">
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <button id="btn">Weiter →</button>
+    </div>
 
     <script>
-        // iPhone-optimierte Herz-Animation
+        // Originalgrößen
+        const CANVAS_WIDTH = 640;
+        const CANVAS_HEIGHT = 480;
+        const CANVAS_CENTER_X = CANVAS_WIDTH / 2;
+        const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2;
+        
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const headerHeight = 80;
+        const btn = document.getElementById('btn');
         
-        // Anpassung für iPhone Display
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - headerHeight;
+        // Skalierung
+        function resize() {
+            const scale = Math.min(
+                window.innerWidth / CANVAS_WIDTH,
+                window.innerHeight / CANVAS_HEIGHT
+            );
+            document.getElementById('container').style.transform = `scale(${scale})`;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        
-        // Herz-Funktion
-        function heartFunction(t, shrinkRatio) {
-            const x = 16 * Math.pow(Math.sin(t), 3);
-            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-            return {
-                x: x * shrinkRatio + canvas.width / 2,
-                y: y * shrinkRatio + canvas.height / 2 + headerHeight
-            };
-        }
-        
-        // Animation
-        const particles = [];
-        const heartColor = "#FFC0CB";
-        
-        function createParticles() {
-            for (let i = 0; i < 100; i++) {
-                const t = Math.random() * 2 * Math.PI;
-                const pos = heartFunction(t, 10);
-                particles.push({
-                    x: pos.x,
-                    y: pos.y,
-                    size: Math.random() * 3 + 1,
-                    speedX: Math.random() * 2 - 1,
-                    speedY: Math.random() * 2 - 1
-                });
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Herz-Animation
+        function heartAnimation() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Text
+            ctx.font = "bold 30px Courier";
+            ctx.fillStyle = "pink";
+            ctx.textAlign = "center";
+            ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CANVAS_CENTER_X, 40);
+            
+            // Herz zeichnen (vereinfacht)
+            ctx.fillStyle = "#FFC0CB";
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * CANVAS_WIDTH;
+                const y = Math.random() * CANVAS_HEIGHT;
+                ctx.fillRect(x, y, 2, 2);
             }
         }
-        
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Stickman-Animation
+        function stickmanAnimation() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
             
-            // Zeichne Partikel
-            ctx.fillStyle = heartColor;
-            particles.forEach(p => {
-                p.x += p.speedX;
-                p.y += p.speedY;
+            // Statische Person
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(100, 300, 10, 0, Math.PI * 2);
+            ctx.fill();
+            // Körper usw... (weitere Zeichenbefehle hier)
+            
+            // Laufende Person mit Blumen
+            let stickmanX = 600;
+            function animate() {
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                 
-                // Begrenze die Bewegung
-                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
-                if (p.y < headerHeight || p.y > canvas.height + headerHeight) p.speedY *= -1;
+                // Zeichne Figuren
+                drawStaticPerson();
+                drawStickman(stickmanX, 300);
                 
-                ctx.fillRect(p.x, p.y, p.size, p.size);
-            });
+                if (stickmanX > 140) {
+                    stickmanX -= 5;
+                    requestAnimationFrame(animate);
+                } else {
+                    showText();
+                }
+            }
             
-            requestAnimationFrame(animate);
+            animate();
         }
-        
-        // Stickman Animation
-        function startStickmanAnimation() {
-            document.getElementById('btn').style.display = 'none';
-            document.getElementById('header').textContent = "Alles Gute";
-            
-            // Hier würde die Stickman-Animation starten
-            // (Für eine vollständige Umsetzung müsste der Code erweitert werden)
-            
-            setTimeout(() => {
-                document.getElementById('header').textContent = "Ich werde heute länger bleiben, für dich";
-            }, 2000);
+
+        function drawStaticPerson() {
+            // Zeichne die statische Person
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(100, 300, 10, 0, Math.PI * 2);
+            ctx.fill();
+            // ... weitere Körperteile
         }
+
+        function drawStickman(x, y) {
+            // Zeichne laufende Person mit Blumen
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            // ... weitere Körperteile und Blumen
+        }
+
+        function showText() {
+            // Textanimation
+            let text1 = "Alles Gute";
+            let text2 = "Ich werde heute länger bleiben, für dich";
+            let index = 0;
+            
+            function type() {
+                if (index < text1.length) {
+                    ctx.clearRect(0, 80, CANVAS_WIDTH, 60);
+                    ctx.font = "24px Arial";
+                    ctx.fillStyle = "white";
+                    ctx.fillText(text1.substring(0, index + 1), CANVAS_CENTER_X, 100);
+                    index++;
+                    setTimeout(type, 100);
+                } else {
+                    index = 0;
+                    setTimeout(typeLine2, 1000);
+                }
+            }
+            
+            function typeLine2() {
+                if (index < text2.length) {
+                    ctx.clearRect(0, 120, CANVAS_WIDTH, 60);
+                    ctx.fillText(text2.substring(0, index + 1), CANVAS_CENTER_X, 140);
+                    index++;
+                    setTimeout(typeLine2, 50);
+                }
+            }
+            
+            type();
+        }
+
+        // Start
+        heartAnimation();
         
-        // Initialisierung
-        createParticles();
-        animate();
-        document.getElementById('btn').addEventListener('click', startStickmanAnimation);
-        
-        // Touch-Optimierung für iPhone
-        document.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            // Touch-Handler hier
-        }, { passive: false });
+        // Button Event
+        btn.addEventListener('click', () => {
+            btn.style.display = 'none';
+            stickmanAnimation();
+        });
+
+        // Touch-Lock
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     </script>
 </body>
 </html>
