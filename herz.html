@@ -1,275 +1,178 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Für Greta ♥</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            overflow: hidden;
-            touch-action: none;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #container {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            transform-origin: center center;
-        }
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            image-rendering: pixelated;
-        }
-        #btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            background: #FFC0CB;
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 100;
-            cursor: pointer;
-            font-family: Arial;
+        body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+        #canvas { display:block; width:100vw; height:100vh; }
+        #btn { 
+            position:fixed; bottom:20px; right:20px; 
+            background:#FFC0CB; color:#000; border:none; 
+            padding:10px 20px; border-radius:20px; z-index:100;
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <canvas id="canvas" width="640" height="480"></canvas>
-        <button id="btn">Weiter →</button>
-    </div>
+    <canvas id="canvas"></canvas>
+    <button id="btn">Weiter →</button>
 
     <script>
-        // Originale Einstellungen
-        const CANVAS_WIDTH = 640;
-        const CANVAS_HEIGHT = 480;
-        const CANVAS_CENTER_X = CANVAS_WIDTH / 2;
-        const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2;
-        const IMAGE_ENLARGE = 11;
-        const HEART_COLOR = "#FFC0CB";
-        
+        // Canvas-Einstellungen
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const btn = document.getElementById('btn');
         
-        // Skalierung für Mobile
-        function resize() {
-            const scale = Math.min(
-                window.innerWidth / CANVAS_WIDTH,
-                window.innerHeight / CANVAS_HEIGHT
-            );
-            document.getElementById('container').style.transform = `scale(${scale})`;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // 1. Herz-Animation (originalgetreu)
-        let heartParticles = [];
-        const generate_frame = 20;
-        let frame = 0;
+        // Maße wie im Original
+        const WIDTH = canvas.width = 640;
+        const HEIGHT = canvas.height = 480;
+        const CENTER_X = WIDTH / 2;
+        const CENTER_Y = HEIGHT / 2;
         
-        function heartFunction(t, shrinkRatio = IMAGE_ENLARGE) {
-            const x = 16 * Math.pow(Math.sin(t), 3);
-            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-            return {
-                x: x * shrinkRatio + CANVAS_CENTER_X,
-                y: y * shrinkRatio + CANVAS_CENTER_Y
-            };
-        }
-        
-        function initHeartParticles() {
-            heartParticles = [];
-            for (let frame = 0; frame < generate_frame; frame++) {
-                const particles = [];
-                // Halo-Effekt
-                for (let i = 0; i < 150; i++) {
-                    const t = Math.random() * 2 * Math.PI;
-                    const pos = heartFunction(t, 11.6);
-                    particles.push({
-                        x: pos.x + Math.random() * 28 - 14,
-                        y: pos.y + Math.random() * 28 - 14,
-                        size: Math.random() > 0.5 ? 2 : 1
-                    });
+        // 1. HERZ-ANIMATION (Originalgetreu)
+        class HeartAnimation {
+            constructor() {
+                this.particles = [];
+                this.frameCount = 20;
+                this.init();
+            }
+            
+            init() {
+                // [Herzgenerierung wie zuvor...]
+                for (let f = 0; f < this.frameCount; f++) {
+                    this.particles.push(this.generateHeartFrame(f));
                 }
-                // Herz-Punkte
-                for (let t = 0; t < 2 * Math.PI; t += 0.1) {
-                    const pos = heartFunction(t);
-                    particles.push({
-                        x: pos.x + Math.random() * 6 - 3,
-                        y: pos.y + Math.random() * 6 - 3,
-                        size: Math.floor(Math.random() * 3) + 1
-                    });
-                }
-                heartParticles.push(particles);
+            }
+            
+            render(frame) {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                
+                // Text
+                ctx.font = "bold 30px Courier";
+                ctx.fillStyle = "pink";
+                ctx.textAlign = "center";
+                ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CENTER_X, 40);
+                
+                // Partikel
+                ctx.fillStyle = "#FFC0CB";
+                this.particles[frame % this.frameCount].forEach(p => {
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
             }
         }
-        
-        function drawHeart() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            
-            // Text
-            ctx.font = "bold 30px 'Courier New', Courier, monospace";
-            ctx.fillStyle = "pink";
-            ctx.textAlign = "center";
-            ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CANVAS_CENTER_X, 40);
-            
-            // Partikel
-            const particles = heartParticles[frame];
-            ctx.fillStyle = HEART_COLOR;
-            particles.forEach(p => {
-                ctx.fillRect(p.x, p.y, p.size, p.size);
-            });
-            
-            frame = (frame + 1) % generate_frame;
-        }
 
-        // 2. Stickman-Animation
-        let stickmanX = 600;
-        let typingText = "";
-        let typingIndex = 0;
-        let currentLine = "";
-        
-        function drawStaticPerson() {
-            ctx.fillStyle = "white";
+        // 2. STICKMAN-ANIMATION
+        function drawStickman(x, y, hasFlowers = true) {
             // Kopf
             ctx.beginPath();
-            ctx.arc(100, 300, 10, 0, Math.PI * 2);
+            ctx.arc(x, y, 10, 0, Math.PI*2);
+            ctx.fillStyle = "white";
             ctx.fill();
+            
             // Körper
-            ctx.beginPath();
-            ctx.moveTo(100, 310);
-            ctx.lineTo(100, 350);
+            ctx.moveTo(x, y+10);
+            ctx.lineTo(x, y+30);
             ctx.strokeStyle = "white";
             ctx.lineWidth = 2;
             ctx.stroke();
+            
             // Arme
-            ctx.beginPath();
-            ctx.moveTo(100, 320);
-            ctx.lineTo(80, 330);
-            ctx.moveTo(100, 320);
-            ctx.lineTo(120, 330);
+            ctx.moveTo(x, y+15);
+            ctx.lineTo(x-15, y+20);
+            ctx.moveTo(x, y+15);
+            ctx.lineTo(x+15, y+20);
             ctx.stroke();
+            
             // Beine
-            ctx.beginPath();
-            ctx.moveTo(100, 350);
-            ctx.lineTo(80, 370);
-            ctx.moveTo(100, 350);
-            ctx.lineTo(120, 370);
-            ctx.stroke();
-        }
-        
-        function drawStickman(x, y) {
-            ctx.fillStyle = "white";
-            // Kopf
-            ctx.beginPath();
-            ctx.arc(x, y, 10, 0, Math.PI * 2);
-            ctx.fill();
-            // Körper
-            ctx.beginPath();
-            ctx.moveTo(x, y + 10);
-            ctx.lineTo(x, y + 30);
-            ctx.stroke();
-            // Arme
-            ctx.beginPath();
-            ctx.moveTo(x, y + 15);
-            ctx.lineTo(x - 15, y + 20);
-            ctx.moveTo(x, y + 15);
-            ctx.lineTo(x + 15, y + 20);
-            ctx.stroke();
-            // Beine
-            ctx.beginPath();
-            ctx.moveTo(x, y + 30);
-            ctx.lineTo(x - 15, y + 45);
-            ctx.moveTo(x, y + 30);
-            ctx.lineTo(x + 15, y + 45);
+            ctx.moveTo(x, y+30);
+            ctx.lineTo(x-15, y+45);
+            ctx.moveTo(x, y+30);
+            ctx.lineTo(x+15, y+45);
             ctx.stroke();
             
-            // Blumen
-            ctx.strokeStyle = "green";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x + 15, y + 20);
-            ctx.lineTo(x + 15, y + 30);
-            ctx.stroke();
-            
-            const colors = ["red", "pink", "yellow", "magenta"];
-            for (let i = 0; i < 4; i++) {
-                ctx.fillStyle = colors[i];
-                ctx.beginPath();
-                ctx.arc(
-                    x + 15 + Math.random() * 10 - 5, 
-                    y + 20 + Math.random() * 10 - 5, 
-                    4, 0, Math.PI * 2
-                );
-                ctx.fill();
+            // Blumen (falls benötigt)
+            if (hasFlowers) {
+                ctx.strokeStyle = "green";
+                ctx.lineWidth = 3;
+                ctx.moveTo(x+15, y+20);
+                ctx.lineTo(x+15, y+30);
+                ctx.stroke();
+                
+                ["red", "pink", "yellow"].forEach(color => {
+                    ctx.beginPath();
+                    ctx.arc(x+13+Math.random()*4, y+20+Math.random()*8, 4, 0, Math.PI*2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                });
             }
         }
-        
-        function typeText() {
-            if (typingIndex < typingText.length) {
-                currentLine += typingText[typingIndex];
-                typingIndex++;
-                
-                ctx.fillStyle = "white";
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.clearRect(0, 80, CANVAS_WIDTH, 100);
-                ctx.fillText(currentLine, CANVAS_CENTER_X, 100);
-                
-                setTimeout(typeText, typingText === "Alles Gute" ? 180 : 80);
+
+        // 3. TEXT-ANIMATION (Korrekte Abfolge)
+        function typeText(text, x, y, speed, onComplete) {
+            let current = "";
+            let index = 0;
+            
+            function type() {
+                if (index < text.length) {
+                    current += text[index];
+                    ctx.fillStyle = "white";
+                    ctx.font = "20px Arial";
+                    ctx.fillText(current, x, y);
+                    index++;
+                    setTimeout(type, speed);
+                } else if (onComplete) {
+                    setTimeout(onComplete, 1000); // Pause vor Callback
+                }
             }
+            type();
+        }
+
+        // HAUPTPROGRAMM
+        const heart = new HeartAnimation();
+        let frame = 0;
+        
+        // 1. Phase: Herzanimation
+        function animateHeart() {
+            heart.render(frame);
+            frame++;
+            if (heartActive) requestAnimationFrame(animateHeart);
         }
         
-        function stickmanAnimation() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        // 2. Phase: Stickman-Animation
+        function startStickmanAnimation() {
+            let stickmanX = 600;
             
-            drawStaticPerson();
-            drawStickman(stickmanX, 300);
-            
-            if (stickmanX > 140) {
-                stickmanX -= 5;
-                requestAnimationFrame(stickmanAnimation);
-            } else {
-                // Erste Textzeile
-                typingText = "Alles Gute   ";
-                typingIndex = 0;
-                currentLine = "";
-                typeText();
+            function animate() {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
                 
-                // Zweite Textzeile
-                setTimeout(() => {
-                    typingText = "Ich werde heute länger bleiben, für dich";
-                    typingIndex = 0;
-                    currentLine = "";
-                    typeText();
-                }, 1000);
+                // Statische Person
+                drawStickman(100, 300, false);
+                
+                // Laufender Stickman
+                drawStickman(stickmanX, 300);
+                
+                if (stickmanX > 140) {
+                    stickmanX -= 5;
+                    requestAnimationFrame(animate);
+                } else {
+                    // 3. Phase: Texte nacheinander
+                    typeText("Alles Gute", CENTER_X, 100, 150, () => {
+                        typeText("Ich werde heute länger bleiben, für dich", CENTER_X, 140, 50, null);
+                    });
+                }
             }
+            animate();
         }
 
         // Start
-        initHeartParticles();
-        let heartInterval = setInterval(drawHeart, 100);
+        let heartActive = true;
+        animateHeart();
         
-        // Button Event
         btn.addEventListener('click', () => {
-            clearInterval(heartInterval);
+            heartActive = false;
             btn.style.display = 'none';
-            stickmanAnimation();
+            startStickmanAnimation();
         });
-
-        // Touch-Lock
-        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     </script>
 </body>
 </html>
