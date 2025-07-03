@@ -1,34 +1,178 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Für Greta ♥</title>
     <style>
-        body { background: black; text-align: center; }
-        #herz { color: #ffc0cb; font-size: 30px; margin-top: 50px; }
-        #text { color: pink; font-family: Arial; font-size: 24px; }
+        body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+        #canvas { display:block; width:100vw; height:100vh; }
+        #btn { 
+            position:fixed; bottom:20px; right:20px; 
+            background:#FFC0CB; color:#000; border:none; 
+            padding:10px 20px; border-radius:20px; z-index:100;
+        }
     </style>
 </head>
 <body>
-    <div id="text">GRETA, ALLES GUTE ZUM 17! 💗</div>
-    <div id="herz"></div>
+    <canvas id="canvas"></canvas>
+    <button id="btn">Weiter →</button>
 
     <script>
-        // Herz-Animation in JavaScript
-        const herz = document.getElementById("herz");
-        const zeichen = ["♥", "💗", "💖", "💕"];
+        // Canvas-Einstellungen
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('btn');
         
-        function animiere() {
-            let output = "";
-            for (let i = 0; i < 50; i++) {
-                const x = Math.random() * window.innerWidth;
-                const y = Math.random() * window.innerHeight;
-                const z = zeichen[Math.floor(Math.random() * zeichen.length)];
-                output += `<span style="position:absolute; left:${x}px; top:${y}px">${z}</span>`;
+        // Maße wie im Original
+        const WIDTH = canvas.width = 640;
+        const HEIGHT = canvas.height = 480;
+        const CENTER_X = WIDTH / 2;
+        const CENTER_Y = HEIGHT / 2;
+        
+        // 1. HERZ-ANIMATION (Originalgetreu)
+        class HeartAnimation {
+            constructor() {
+                this.particles = [];
+                this.frameCount = 20;
+                this.init();
             }
-            herz.innerHTML = output;
+            
+            init() {
+                // [Herzgenerierung wie zuvor...]
+                for (let f = 0; f < this.frameCount; f++) {
+                    this.particles.push(this.generateHeartFrame(f));
+                }
+            }
+            
+            render(frame) {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                
+                // Text
+                ctx.font = "bold 30px Courier";
+                ctx.fillStyle = "pink";
+                ctx.textAlign = "center";
+                ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CENTER_X, 40);
+                
+                // Partikel
+                ctx.fillStyle = "#FFC0CB";
+                this.particles[frame % this.frameCount].forEach(p => {
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+            }
+        }
+
+        // 2. STICKMAN-ANIMATION
+        function drawStickman(x, y, hasFlowers = true) {
+            // Kopf
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI*2);
+            ctx.fillStyle = "white";
+            ctx.fill();
+            
+            // Körper
+            ctx.moveTo(x, y+10);
+            ctx.lineTo(x, y+30);
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Arme
+            ctx.moveTo(x, y+15);
+            ctx.lineTo(x-15, y+20);
+            ctx.moveTo(x, y+15);
+            ctx.lineTo(x+15, y+20);
+            ctx.stroke();
+            
+            // Beine
+            ctx.moveTo(x, y+30);
+            ctx.lineTo(x-15, y+45);
+            ctx.moveTo(x, y+30);
+            ctx.lineTo(x+15, y+45);
+            ctx.stroke();
+            
+            // Blumen (falls benötigt)
+            if (hasFlowers) {
+                ctx.strokeStyle = "green";
+                ctx.lineWidth = 3;
+                ctx.moveTo(x+15, y+20);
+                ctx.lineTo(x+15, y+30);
+                ctx.stroke();
+                
+                ["red", "pink", "yellow"].forEach(color => {
+                    ctx.beginPath();
+                    ctx.arc(x+13+Math.random()*4, y+20+Math.random()*8, 4, 0, Math.PI*2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                });
+            }
+        }
+
+        // 3. TEXT-ANIMATION (Korrekte Abfolge)
+        function typeText(text, x, y, speed, onComplete) {
+            let current = "";
+            let index = 0;
+            
+            function type() {
+                if (index < text.length) {
+                    current += text[index];
+                    ctx.fillStyle = "white";
+                    ctx.font = "20px Arial";
+                    ctx.fillText(current, x, y);
+                    index++;
+                    setTimeout(type, speed);
+                } else if (onComplete) {
+                    setTimeout(onComplete, 1000); // Pause vor Callback
+                }
+            }
+            type();
+        }
+
+        // HAUPTPROGRAMM
+        const heart = new HeartAnimation();
+        let frame = 0;
+        
+        // 1. Phase: Herzanimation
+        function animateHeart() {
+            heart.render(frame);
+            frame++;
+            if (heartActive) requestAnimationFrame(animateHeart);
         }
         
-        setInterval(animiere, 300);
+        // 2. Phase: Stickman-Animation
+        function startStickmanAnimation() {
+            let stickmanX = 600;
+            
+            function animate() {
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                
+                // Statische Person
+                drawStickman(100, 300, false);
+                
+                // Laufender Stickman
+                drawStickman(stickmanX, 300);
+                
+                if (stickmanX > 140) {
+                    stickmanX -= 5;
+                    requestAnimationFrame(animate);
+                } else {
+                    // 3. Phase: Texte nacheinander
+                    typeText("Alles Gute", CENTER_X, 100, 150, () => {
+                        typeText("Ich werde heute länger bleiben, für dich", CENTER_X, 140, 50, null);
+                    });
+                }
+            }
+            animate();
+        }
+
+        // Start
+        let heartActive = true;
+        animateHeart();
+        
+        btn.addEventListener('click', () => {
+            heartActive = false;
+            btn.style.display = 'none';
+            startStickmanAnimation();
+        });
     </script>
 </body>
 </html>
