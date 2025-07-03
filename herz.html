@@ -1,275 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Für Greta ♥</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            overflow: hidden;
-            touch-action: none;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #container {
-            position: relative;
-            width: 640px;
-            height: 480px;
-            transform-origin: center center;
-        }
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            image-rendering: pixelated;
-        }
-        #btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            background: #FFC0CB;
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 100;
-            cursor: pointer;
-            font-family: Arial;
-        }
+        body { margin:0; overflow:hidden; background:#000; touch-action:none; }
+        #canvas { display:block; width:100vw; height:100vh; image-rendering: pixelated; }
     </style>
 </head>
 <body>
-    <div id="container">
-        <canvas id="canvas" width="640" height="480"></canvas>
-        <button id="btn">Weiter →</button>
-    </div>
+    <canvas id="canvas"></canvas>
 
     <script>
-        // Originale Einstellungen
-        const CANVAS_WIDTH = 640;
-        const CANVAS_HEIGHT = 480;
-        const CANVAS_CENTER_X = CANVAS_WIDTH / 2;
-        const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2;
-        const IMAGE_ENLARGE = 11;
-        const HEART_COLOR = "#FFC0CB";
-        
+        // 1:1-Übersetzung der Python-Herzfunktion
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const btn = document.getElementById('btn');
-        
-        // Skalierung für Mobile
-        function resize() {
-            const scale = Math.min(
-                window.innerWidth / CANVAS_WIDTH,
-                window.innerHeight / CANVAS_HEIGHT
-            );
-            document.getElementById('container').style.transform = `scale(${scale})`;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        const CANVAS_WIDTH = canvas.width = window.innerWidth;
+        const CANVAS_HEIGHT = canvas.height = window.innerHeight;
+        const CENTER_X = CANVAS_WIDTH / 2;
+        const CENTER_Y = CANVAS_HEIGHT / 2;
+        const IMAGE_ENLARGE = 11;
+        const HEART_COLOR = "#FFC0CB";
 
-        // 1. Herz-Animation (originalgetreu)
-        let heartParticles = [];
-        const generate_frame = 20;
-        let frame = 0;
-        
+        // Originale Herzformel
         function heartFunction(t, shrinkRatio = IMAGE_ENLARGE) {
             const x = 16 * Math.pow(Math.sin(t), 3);
-            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
             return {
-                x: x * shrinkRatio + CANVAS_CENTER_X,
-                y: y * shrinkRatio + CANVAS_CENTER_Y
+                x: x * shrinkRatio + CENTER_X,
+                y: y * shrinkRatio + CENTER_Y
             };
         }
-        
-        function initHeartParticles() {
-            heartParticles = [];
-            for (let frame = 0; frame < generate_frame; frame++) {
+
+        // Partikel-System wie im Python-Code
+        class HeartParticleSystem {
+            constructor() {
+                this.points = [];
+                this.edgePoints = [];
+                this.centerPoints = [];
+                this.allFrames = [];
+                this.frameCount = 20;
+                this.init();
+            }
+
+            init() {
+                // Punkte auf Herz-Kurve
+                for (let t = 0; t < 2 * Math.PI; t += 0.01) {
+                    const {x, y} = heartFunction(t);
+                    this.points.push({x, y});
+                }
+
+                // Diffusionspunkte
+                this.points.forEach(point => {
+                    for (let i = 0; i < 3; i++) {
+                        this.edgePoints.push(this.scatter(point.x, point.y));
+                    }
+                });
+
+                // Zentrumspunkte
+                for (let i = 0; i < 5000; i++) {
+                    const pt = this.points[Math.floor(Math.random() * this.points.length)];
+                    this.centerPoints.push(this.scatter(pt.x, pt.y, 0.17));
+                }
+
+                // Alle Frames berechnen
+                for (let f = 0; f < this.frameCount; f++) {
+                    this.allFrames.push(this.calcFrame(f));
+                }
+            }
+
+            scatter(x, y, beta = 0.15) {
+                const ratioX = -beta * Math.log(Math.random());
+                const ratioY = -beta * Math.log(Math.random());
+                return {
+                    x: x - ratioX * (x - CENTER_X),
+                    y: y - ratioY * (y - CENTER_Y)
+                };
+            }
+
+            calcFrame(frame) {
+                const ratio = 25 * this.curve(frame / 10 * Math.PI);
                 const particles = [];
+
                 // Halo-Effekt
-                for (let i = 0; i < 150; i++) {
+                for (let i = 0; i < 2000; i++) {
                     const t = Math.random() * 2 * Math.PI;
-                    const pos = heartFunction(t, 11.6);
+                    let {x, y} = heartFunction(t, 11.6);
+                    const force = -1 / (Math.pow(x - CENTER_X, 2) + Math.pow(y - CENTER_Y, 2));
+                    x += ratio * force * (x - CENTER_X);
+                    y += ratio * force * (y - CENTER_Y);
                     particles.push({
-                        x: pos.x + Math.random() * 28 - 14,
-                        y: pos.y + Math.random() * 28 - 14,
-                        size: Math.random() > 0.5 ? 2 : 1
+                        x: x + Math.random() * 14 - 7,
+                        y: y + Math.random() * 14 - 7,
+                        size: Math.random() > 0.3 ? 2 : 1
                     });
                 }
-                // Herz-Punkte
-                for (let t = 0; t < 2 * Math.PI; t += 0.1) {
-                    const pos = heartFunction(t);
+
+                // Hauptpunkte
+                this.points.forEach(pt => {
+                    const pos = this.calcPosition(pt.x, pt.y, ratio);
                     particles.push({
-                        x: pos.x + Math.random() * 6 - 3,
-                        y: pos.y + Math.random() * 6 - 3,
+                        x: pos.x,
+                        y: pos.y,
                         size: Math.floor(Math.random() * 3) + 1
                     });
-                }
-                heartParticles.push(particles);
+                });
+
+                return particles;
+            }
+
+            calcPosition(x, y, ratio) {
+                const force = 1 / Math.pow(Math.pow(x - CENTER_X, 2) + Math.pow(y - CENTER_Y, 2), 0.52);
+                return {
+                    x: x - (ratio * force * (x - CENTER_X) + Math.random() * 2 - 1),
+                    y: y - (ratio * force * (y - CENTER_Y) + Math.random() * 2 - 1)
+                };
+            }
+
+            curve(p) {
+                return 2 * (2 * Math.sin(4 * p)) / (2 * Math.PI);
             }
         }
-        
-        function drawHeart() {
+
+        // Animation starten
+        const system = new HeartParticleSystem();
+        let frame = 0;
+
+        function animate() {
             ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
             
-            // Text
-            ctx.font = "bold 30px 'Courier New', Courier, monospace";
+            // Header-Text
+            ctx.font = "bold 30px 'Courier New', monospace";
             ctx.fillStyle = "pink";
             ctx.textAlign = "center";
-            ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CANVAS_CENTER_X, 40);
+            ctx.fillText("GRETA, ALLES GUTE ZUM 17! 💗", CENTER_X, 50);
             
-            // Partikel
-            const particles = heartParticles[frame];
+            // Partikel zeichnen
             ctx.fillStyle = HEART_COLOR;
+            const particles = system.allFrames[frame % system.frameCount];
             particles.forEach(p => {
                 ctx.fillRect(p.x, p.y, p.size, p.size);
             });
             
-            frame = (frame + 1) % generate_frame;
+            frame++;
+            requestAnimationFrame(animate);
         }
 
-        // 2. Stickman-Animation
-        let stickmanX = 600;
-        let typingText = "";
-        let typingIndex = 0;
-        let currentLine = "";
-        
-        function drawStaticPerson() {
-            ctx.fillStyle = "white";
-            // Kopf
-            ctx.beginPath();
-            ctx.arc(100, 300, 10, 0, Math.PI * 2);
-            ctx.fill();
-            // Körper
-            ctx.beginPath();
-            ctx.moveTo(100, 310);
-            ctx.lineTo(100, 350);
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            // Arme
-            ctx.beginPath();
-            ctx.moveTo(100, 320);
-            ctx.lineTo(80, 330);
-            ctx.moveTo(100, 320);
-            ctx.lineTo(120, 330);
-            ctx.stroke();
-            // Beine
-            ctx.beginPath();
-            ctx.moveTo(100, 350);
-            ctx.lineTo(80, 370);
-            ctx.moveTo(100, 350);
-            ctx.lineTo(120, 370);
-            ctx.stroke();
-        }
-        
-        function drawStickman(x, y) {
-            ctx.fillStyle = "white";
-            // Kopf
-            ctx.beginPath();
-            ctx.arc(x, y, 10, 0, Math.PI * 2);
-            ctx.fill();
-            // Körper
-            ctx.beginPath();
-            ctx.moveTo(x, y + 10);
-            ctx.lineTo(x, y + 30);
-            ctx.stroke();
-            // Arme
-            ctx.beginPath();
-            ctx.moveTo(x, y + 15);
-            ctx.lineTo(x - 15, y + 20);
-            ctx.moveTo(x, y + 15);
-            ctx.lineTo(x + 15, y + 20);
-            ctx.stroke();
-            // Beine
-            ctx.beginPath();
-            ctx.moveTo(x, y + 30);
-            ctx.lineTo(x - 15, y + 45);
-            ctx.moveTo(x, y + 30);
-            ctx.lineTo(x + 15, y + 45);
-            ctx.stroke();
-            
-            // Blumen
-            ctx.strokeStyle = "green";
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x + 15, y + 20);
-            ctx.lineTo(x + 15, y + 30);
-            ctx.stroke();
-            
-            const colors = ["red", "pink", "yellow", "magenta"];
-            for (let i = 0; i < 4; i++) {
-                ctx.fillStyle = colors[i];
-                ctx.beginPath();
-                ctx.arc(
-                    x + 15 + Math.random() * 10 - 5, 
-                    y + 20 + Math.random() * 10 - 5, 
-                    4, 0, Math.PI * 2
-                );
-                ctx.fill();
-            }
-        }
-        
-        function typeText() {
-            if (typingIndex < typingText.length) {
-                currentLine += typingText[typingIndex];
-                typingIndex++;
-                
-                ctx.fillStyle = "white";
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.clearRect(0, 80, CANVAS_WIDTH, 100);
-                ctx.fillText(currentLine, CANVAS_CENTER_X, 100);
-                
-                setTimeout(typeText, typingText === "Alles Gute" ? 150 : 50);
-            }
-        }
-        
-        function stickmanAnimation() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            
-            drawStaticPerson();
-            drawStickman(stickmanX, 300);
-            
-            if (stickmanX > 140) {
-                stickmanX -= 5;
-                requestAnimationFrame(stickmanAnimation);
-            } else {
-                // Erste Textzeile
-                typingText = "Alles Gute";
-                typingIndex = 0;
-                currentLine = "";
-                typeText();
-                
-                // Zweite Textzeile
-                setTimeout(() => {
-                    typingText = "Ich werde heute länger bleiben, für dich";
-                    typingIndex = 0;
-                    currentLine = "";
-                    typeText();
-                }, 1000);
-            }
-        }
-
-        // Start
-        initHeartParticles();
-        let heartInterval = setInterval(drawHeart, 100);
-        
-        // Button Event
-        btn.addEventListener('click', () => {
-            clearInterval(heartInterval);
-            btn.style.display = 'none';
-            stickmanAnimation();
-        });
-
-        // Touch-Lock
-        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        animate();
     </script>
 </body>
 </html>
