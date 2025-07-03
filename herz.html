@@ -227,7 +227,7 @@
                 ctx.clearRect(0, 80, CANVAS_WIDTH, 100);
                 ctx.fillText(currentLine, CANVAS_CENTER_X, 100);
                 
-                setTimeout(typeText, typingText === "Alles Gute" ? 150 : 50);
+                setTimeout(typeText, typingText === "Alles Gute" ? 180 : 80);
             }
         }
         
@@ -242,7 +242,7 @@
                 requestAnimationFrame(stickmanAnimation);
             } else {
                 // Erste Textzeile
-                typingText = "Alles Gute";
+                typingText = "Alles Gute   ";
                 typingIndex = 0;
                 currentLine = "";
                 typeText();
