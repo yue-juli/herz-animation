@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Für Greta ♥</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            touch-action: manipulation;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        #header {
+            color: #FFC0CB;
+            text-align: center;
+            font-size: 28px;
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+        #canvas {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 80px);
+        }
+        #btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FFC0CB;
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">GRETA, ALLES GUTE ZUM 17! 💗</div>
+    <canvas id="canvas"></canvas>
+    <button id="btn">Weiter →</button>
+
+    <script>
+        // iPhone-optimierte Herz-Animation
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const headerHeight = 80;
+        
+        // Anpassung für iPhone Display
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - headerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Herz-Funktion
+        function heartFunction(t, shrinkRatio) {
+            const x = 16 * Math.pow(Math.sin(t), 3);
+            const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return {
+                x: x * shrinkRatio + canvas.width / 2,
+                y: y * shrinkRatio + canvas.height / 2 + headerHeight
+            };
+        }
+        
+        // Animation
+        const particles = [];
+        const heartColor = "#FFC0CB";
+        
+        function createParticles() {
+            for (let i = 0; i < 100; i++) {
+                const t = Math.random() * 2 * Math.PI;
+                const pos = heartFunction(t, 10);
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    size: Math.random() * 3 + 1,
+                    speedX: Math.random() * 2 - 1,
+                    speedY: Math.random() * 2 - 1
+                });
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Zeichne Partikel
+            ctx.fillStyle = heartColor;
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                
+                // Begrenze die Bewegung
+                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                if (p.y < headerHeight || p.y > canvas.height + headerHeight) p.speedY *= -1;
+                
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Stickman Animation
+        function startStickmanAnimation() {
+            document.getElementById('btn').style.display = 'none';
+            document.getElementById('header').textContent = "Alles Gute";
+            
+            // Hier würde die Stickman-Animation starten
+            // (Für eine vollständige Umsetzung müsste der Code erweitert werden)
+            
+            setTimeout(() => {
+                document.getElementById('header').textContent = "Ich werde heute länger bleiben, für dich";
+            }, 2000);
+        }
+        
+        // Initialisierung
+        createParticles();
+        animate();
+        document.getElementById('btn').addEventListener('click', startStickmanAnimation);
+        
+        // Touch-Optimierung für iPhone
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            // Touch-Handler hier
+        }, { passive: false });
+    </script>
+</body>
+</html>
